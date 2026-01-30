@@ -8,6 +8,8 @@
  * - 친절한 블로그 말투
  */
 
+const linkGenerator = require('../utils/linkGenerator');
+
 class PremiumContentGenerator {
   constructor() {
     // 클릭 유도 제목 템플릿
@@ -286,10 +288,7 @@ class PremiumContentGenerator {
   </div>
 
   <div style="text-align: center; margin-top: 20px;">
-    <a href="${product.productUrl}" target="_blank" rel="noopener noreferrer sponsored"
-       style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 15px rgba(102,126,234,0.4);">
-      ✨ 최저가 보러가기
-    </a>
+    ${linkGenerator.generateProductButton(product, '✨ 최저가 보러가기')}
   </div>
 
 </div>

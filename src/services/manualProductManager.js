@@ -6,6 +6,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const linkGenerator = require('../utils/linkGenerator');
 
 class ManualProductManager {
   constructor() {
@@ -80,8 +81,15 @@ class ManualProductManager {
    */
   async getProductsByCategory(category) {
     const data = await this.loadProducts();
-    if (!category) return data.products;
-    return data.products.filter(p => p.categoryName === category);
+    let products = category
+      ? data.products.filter(p => p.categoryName === category)
+      : data.products;
+
+    // 링크 유효성 검사 및 처리
+    return products.map(p => ({
+      ...p,
+      productUrl: linkGenerator.getSafeProductUrl(p)
+    }));
   }
 
   /**
@@ -317,13 +325,17 @@ class ManualProductManager {
 
     console.log(`[수동] 오늘의 카테고리: ${category}`);
 
+    // 링크 유효성 검사 및 처리
+    const processedProducts = allProducts[category].map(p => ({
+      ...p,
+      productImage: '',
+      categoryName: category,
+      productUrl: linkGenerator.getSafeProductUrl(p)
+    }));
+
     return {
       category,
-      products: allProducts[category].map(p => ({
-        ...p,
-        productImage: '',
-        categoryName: category
-      }))
+      products: processedProducts
     };
   }
 

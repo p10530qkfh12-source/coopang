@@ -14,6 +14,7 @@ const path = require('path');
 const DuplicateChecker = require('./duplicateChecker');
 const ContentEnhancer = require('./contentEnhancer');
 const PremiumContentGenerator = require('./premiumContentGenerator');
+const linkGenerator = require('../utils/linkGenerator');
 
 class WordPressPublisher {
   constructor(options = {}) {
@@ -728,10 +729,7 @@ class WordPressPublisher {
 
   ${tags.length > 0 ? `<p>${tags.join(' · ')}</p>` : ''}
 
-  <a href="${product.productUrl}" target="_blank" rel="noopener noreferrer sponsored"
-     style="display: inline-block; background: #FF5722; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">
-    👉 구매하러 가기
-  </a>
+  ${linkGenerator.generateProductButton(product, '👉 구매하러 가기', 'display: inline-block; background: #FF5722; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;')}
 </div>`;
   }
 
