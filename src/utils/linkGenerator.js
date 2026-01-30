@@ -1,74 +1,54 @@
 /**
- * 링크 생성 유틸리티 v2.0
+ * 링크 생성 유틸리티 v3.1
  *
- * - go.php 리다이렉트 방식
- * - 절대 경로 사용 (도메인 포함)
- * - 이중 인코딩 방지
- * - HTML 태그 고도화
+ * 모드 설정:
+ * - USE_REDIRECT=true: go.php 리다이렉트 사용
+ * - USE_REDIRECT=false: 쿠팡 링크 직접 사용 (기본값)
  */
 
 class LinkGenerator {
   constructor() {
-    // 워드프레스 사이트 URL (환경변수에서 로드)
+    // 워드프레스 사이트 URL
     this.siteUrl = process.env.WP_SITE_URL || 'https://realize.iwinv.net';
 
-    // go.php 리다이렉터 경로
-    this.redirectorPath = '/go.php';
+    // 리다이렉트 모드 (go.php 사용 여부)
+    // go.php가 서버에 없으면 false로 설정
+    this.useRedirect = process.env.USE_REDIRECT === 'true';
 
-    // 쿠팡 도메인 패턴
-    this.coupangDomains = [
-      'coupang.com',
-      'www.coupang.com',
-      'link.coupang.com',
-      'm.coupang.com',
-      'coupa.ng'
-    ];
+    // 쿠팡 도메인 (검증용)
+    this.coupangDomains = ['coupang.com', 'link.coupang.com', 'coupa.ng'];
   }
 
   /**
-   * go.php 리다이렉트 URL 생성
-   * 절대 경로 사용 + encodeURIComponent 한 번만 적용
+   * 최종 상품 링크 URL 생성
+   *
+   * useRedirect=true: go.php?url=인코딩된URL
+   * useRedirect=false: 쿠팡 링크 직접 사용 (기본)
    */
   generateRedirectUrl(targetUrl) {
     if (!targetUrl || typeof targetUrl !== 'string') {
-      console.warn('[링크] 빈 URL 전달됨');
       return null;
     }
 
-    // 이미 go.php로 래핑된 URL이면 그대로 반환 (이중 래핑 방지)
-    if (targetUrl.includes('/go.php?url=')) {
-      console.log(`[링크] 이미 go.php URL: ${targetUrl.substring(0, 80)}...`);
-      return targetUrl;
+    const url = targetUrl.trim();
+    if (!url) return null;
+
+    // go.php 리다이렉트 모드
+    if (this.useRedirect) {
+      // 이미 go.php URL이면 그대로 반환
+      if (url.includes('/go.php?url=')) {
+        return url;
+      }
+
+      const encoded = encodeURIComponent(url);
+      const redirectUrl = `${this.siteUrl}/go.php?url=${encoded}`;
+      console.log(`[링크] go.php: ${url.substring(0, 40)}...`);
+      return redirectUrl;
     }
 
-    // HTTPS 강제
-    let safeUrl = this.enforceHttps(targetUrl.trim());
-
-    // URL 유효성 검사
-    if (!this.isValidUrl(safeUrl)) {
-      console.warn(`[링크] 유효하지 않은 URL: ${targetUrl}`);
-      return null;
-    }
-
-    // 이중 인코딩 방지: 이미 인코딩된 URL인지 확인
-    // %로 시작하는 인코딩이 있으면 디코딩 후 재인코딩
-    try {
-      const decoded = decodeURIComponent(safeUrl);
-      // 디코딩 성공하면 이미 인코딩된 상태였음
-      safeUrl = decoded;
-    } catch (e) {
-      // 디코딩 실패 = 인코딩 안 된 상태 (정상)
-    }
-
-    // encodeURIComponent 딱 한 번만 적용
-    const encodedUrl = encodeURIComponent(safeUrl);
-
-    // 절대 경로로 go.php URL 생성
-    const redirectUrl = `${this.siteUrl}${this.redirectorPath}?url=${encodedUrl}`;
-
-    console.log(`[링크] 리다이렉트 URL 생성: ${redirectUrl.substring(0, 100)}...`);
-
-    return redirectUrl;
+    // 직접 링크 모드 (기본)
+    console.log(`[링크] 직접: ${url.substring(0, 40)}...`);
+    return url;
   }
 
   /**
@@ -121,31 +101,20 @@ class LinkGenerator {
   }
 
   /**
-   * 안전한 상품 URL 생성 (go.php 리다이렉트 사용)
+   * 상품 URL → go.php 리다이렉트 URL 생성
+   *
+   * 우선순위: shortenUrl > productUrl > url
    */
   getSafeProductUrl(product) {
-    try {
-      // shortenUrl 우선, 없으면 productUrl 사용
-      let originalUrl = product.shortenUrl || product.productUrl || product.url || '';
+    // shortenUrl 우선 사용 (쿠팡 API에서 제공하는 단축 URL)
+    const originalUrl = product.shortenUrl || product.productUrl || product.url || '';
 
-      if (!originalUrl) {
-        console.warn(`[링크] 상품 URL 없음: ${product.productName || product.productId}`);
-        return null;
-      }
-
-      // go.php 리다이렉트 URL 생성
-      const redirectUrl = this.generateRedirectUrl(originalUrl);
-
-      if (!redirectUrl) {
-        console.warn(`[링크] 리다이렉트 URL 생성 실패: ${originalUrl}`);
-        return null;
-      }
-
-      return redirectUrl;
-    } catch (error) {
-      console.error(`[링크] URL 처리 오류: ${error.message}`);
+    if (!originalUrl) {
+      console.warn(`[링크] URL 없음: ${product.productName || 'unknown'}`);
       return null;
     }
+
+    return this.generateRedirectUrl(originalUrl);
   }
 
   /**
