@@ -46,8 +46,9 @@ function printUsage() {
 수동 모드 (API 키 불필요):
   npm run manual:list                수동 등록 상품 목록
   npm run manual:sample              샘플 상품 생성
-  npm run manual:publish [카테고리]  수동 상품 워드프레스 포스팅
+  npm run manual:publish [카테고리]  수동 상품 워드프레스 포스팅 (초안)
   npm run manual:notify [카테고리]   수동 상품 텔레그램 알림
+  npm run auto                       오늘의 상품 자동 포스팅 (발행)
 
 예시:
   npm run search "무선 이어폰" 10
@@ -563,10 +564,21 @@ async function manualPublishCommand(category) {
     return;
   }
 
-  // 상품 로드
-  const products = await manager.getProductsByCategory(category);
+  let products;
+  let keyword;
 
-  if (products.length === 0) {
+  // 카테고리 지정 없으면 오늘의 상품 사용
+  if (!category || category === 'auto') {
+    const today = await manager.getTodayProducts();
+    products = today.products;
+    keyword = today.category;
+    console.log(`\n[자동 선택] 오늘의 카테고리: ${keyword}\n`);
+  } else {
+    products = await manager.getProductsByCategory(category);
+    keyword = category;
+  }
+
+  if (!products || products.length === 0) {
     console.log('\n등록된 상품이 없습니다.');
     console.log('먼저 샘플을 생성하세요: npm run manual:sample\n');
     return;
@@ -574,14 +586,11 @@ async function manualPublishCommand(category) {
 
   console.log(`\n[수동 포스팅] ${products.length}개 상품\n`);
 
-  // 키워드 설정
-  const keyword = category || '추천 상품';
-
   // 워드프레스에 포스팅
   const result = await wordpress.publishProducts(products, {
     keyword: keyword,
     status: 'draft',
-    tags: [keyword, '쿠팡', '추천']
+    tags: [keyword, '쿠팡', '추천', '가성비']
   });
 
   if (result.success) {
@@ -589,6 +598,48 @@ async function manualPublishCommand(category) {
     console.log(`포스트 URL: ${result.post.link}`);
     console.log('워드프레스 관리자에서 확인 후 발행하세요.');
     console.log('=================================\n');
+  }
+}
+
+/**
+ * 오늘의 상품 자동 포스팅 (발행)
+ */
+async function autoPublishCommand() {
+  const manager = new ManualProductManager();
+  const wordpress = new WordPressPublisher();
+  const telegram = new TelegramNotifier();
+
+  // 워드프레스 설정 확인
+  if (!wordpress.isConfigured()) {
+    wordpress.printConfigError();
+    return;
+  }
+
+  // 오늘의 상품 가져오기
+  const today = await manager.getTodayProducts();
+  const products = today.products;
+  const keyword = today.category;
+
+  console.log(`\n[자동 포스팅] 오늘의 카테고리: ${keyword}`);
+  console.log(`상품 수: ${products.length}개\n`);
+
+  // 워드프레스에 포스팅 (바로 발행)
+  const result = await wordpress.publishProducts(products, {
+    keyword: keyword,
+    status: 'publish',  // 바로 발행
+    tags: [keyword, '쿠팡', '추천', '가성비', '오늘의추천']
+  });
+
+  if (result.success) {
+    console.log('========== 자동 포스팅 완료 ==========');
+    console.log(`포스트 URL: ${result.post.link}`);
+
+    // 텔레그램 알림 (설정되어 있으면)
+    if (telegram.isConfigured()) {
+      await telegram.notify('📝 자동 포스팅 완료', `${keyword} 추천 글이 발행되었습니다.\n${result.post.link}`);
+    }
+
+    console.log('======================================\n');
   }
 }
 
@@ -720,6 +771,10 @@ async function main() {
 
       case 'manual:notify':
         await manualNotifyCommand(process.argv[3] || null);
+        break;
+
+      case 'auto':
+        await autoPublishCommand();
         break;
 
       default:

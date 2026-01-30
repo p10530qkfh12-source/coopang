@@ -74,14 +74,31 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           echo "📝 일일 자동 포스팅 시작..."
-          npm run publish "오늘의 추천" 5
+          # API 키가 없으면 자동 모드 사용 (요일별 로테이션)
+          if [ -z "${{ secrets.COUPANG_ACCESS_KEY }}" ] || [ "${{ secrets.COUPANG_ACCESS_KEY }}" = "your_access_key_here" ]; then
+            echo "🔄 자동 모드 (요일별 로테이션)..."
+            npm run auto
+          else
+            echo "🔄 API 모드로 포스팅..."
+            npm run publish "오늘의 추천" 5
+          fi
         continue-on-error: true
 
       - name: 🎯 수동 실행
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "🎯 수동 실행: ${{ github.event.inputs.action }}"
-          npm run ${{ github.event.inputs.action }} "${{ github.event.inputs.keyword }}" ${{ github.event.inputs.count }}
+          if [ "${{ github.event.inputs.action }}" = "publish" ]; then
+            # API 키가 없으면 수동 모드 사용
+            if [ -z "${{ secrets.COUPANG_ACCESS_KEY }}" ] || [ "${{ secrets.COUPANG_ACCESS_KEY }}" = "your_access_key_here" ]; then
+              echo "🔄 수동 모드로 포스팅..."
+              npm run manual:publish
+            else
+              npm run publish "${{ github.event.inputs.keyword }}" ${{ github.event.inputs.count }}
+            fi
+          else
+            npm run ${{ github.event.inputs.action }} "${{ github.event.inputs.keyword }}" ${{ github.event.inputs.count }}
+          fi
 
       - name: 📊 실행 결과 요약
         if: always()

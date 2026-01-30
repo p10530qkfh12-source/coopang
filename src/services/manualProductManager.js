@@ -122,6 +122,212 @@ class ManualProductManager {
   }
 
   /**
+   * 전체 샘플 상품 세트 (여러 카테고리)
+   */
+  getAllSampleProducts() {
+    return {
+      '무선이어폰': [
+        {
+          productId: 'EARPHONE001',
+          productName: '애플 에어팟 프로 2세대 USB-C',
+          productPrice: 299000,
+          productUrl: 'https://www.coupang.com/vp/products/earphone001',
+          isRocket: true, isFreeShipping: true, rating: 4.8, reviewCount: 15234,
+          pros: ['노이즈캔슬링 우수', '애플 기기 연동'], cons: ['높은 가격']
+        },
+        {
+          productId: 'EARPHONE002',
+          productName: '삼성 갤럭시 버즈3 프로',
+          productPrice: 259000,
+          productUrl: 'https://www.coupang.com/vp/products/earphone002',
+          isRocket: true, isFreeShipping: true, rating: 4.7, reviewCount: 8921,
+          pros: ['갤럭시 기기 최적화', '편안한 착용감'], cons: ['아이폰 기능 제한']
+        },
+        {
+          productId: 'EARPHONE003',
+          productName: 'QCY T13 ANC 무선 이어폰',
+          productPrice: 29900,
+          productUrl: 'https://www.coupang.com/vp/products/earphone003',
+          isRocket: true, isFreeShipping: true, rating: 4.3, reviewCount: 32156,
+          pros: ['저렴한 가격', '노이즈캔슬링'], cons: ['음질 평범']
+        },
+        {
+          productId: 'EARPHONE004',
+          productName: '소니 WF-1000XM5',
+          productPrice: 379000,
+          productUrl: 'https://www.coupang.com/vp/products/earphone004',
+          isRocket: true, isFreeShipping: true, rating: 4.9, reviewCount: 3421,
+          pros: ['최고 수준 음질', 'LDAC 지원'], cons: ['높은 가격']
+        }
+      ],
+      '보조배터리': [
+        {
+          productId: 'BATTERY001',
+          productName: '앤커 파워코어 20000mAh 고속충전',
+          productPrice: 45900,
+          productUrl: 'https://www.coupang.com/vp/products/battery001',
+          isRocket: true, isFreeShipping: true, rating: 4.7, reviewCount: 28934,
+          pros: ['대용량', '고속충전 지원'], cons: ['무게감 있음']
+        },
+        {
+          productId: 'BATTERY002',
+          productName: '샤오미 보조배터리 10000mAh',
+          productPrice: 19900,
+          productUrl: 'https://www.coupang.com/vp/products/battery002',
+          isRocket: true, isFreeShipping: true, rating: 4.5, reviewCount: 45123,
+          pros: ['가성비 좋음', '슬림한 디자인'], cons: ['용량 보통']
+        },
+        {
+          productId: 'BATTERY003',
+          productName: '삼성 무선 배터리팩 10000mAh',
+          productPrice: 59000,
+          productUrl: 'https://www.coupang.com/vp/products/battery003',
+          isRocket: true, isFreeShipping: true, rating: 4.6, reviewCount: 12456,
+          pros: ['무선충전 지원', '삼성 정품'], cons: ['가격대 있음']
+        },
+        {
+          productId: 'BATTERY004',
+          productName: '벨킨 마그네틱 보조배터리 5000mAh',
+          productPrice: 49900,
+          productUrl: 'https://www.coupang.com/vp/products/battery004',
+          isRocket: true, isFreeShipping: true, rating: 4.4, reviewCount: 8765,
+          pros: ['맥세이프 호환', '컴팩트'], cons: ['용량 적음']
+        }
+      ],
+      '블루투스스피커': [
+        {
+          productId: 'SPEAKER001',
+          productName: 'JBL 플립 6 블루투스 스피커',
+          productPrice: 139000,
+          productUrl: 'https://www.coupang.com/vp/products/speaker001',
+          isRocket: true, isFreeShipping: true, rating: 4.8, reviewCount: 19234,
+          pros: ['강력한 베이스', '방수 IP67'], cons: ['가격대 있음']
+        },
+        {
+          productId: 'SPEAKER002',
+          productName: '소니 SRS-XB13 휴대용 스피커',
+          productPrice: 59000,
+          productUrl: 'https://www.coupang.com/vp/products/speaker002',
+          isRocket: true, isFreeShipping: true, rating: 4.6, reviewCount: 15678,
+          pros: ['컴팩트', '방수 지원'], cons: ['베이스 약함']
+        },
+        {
+          productId: 'SPEAKER003',
+          productName: '보스 사운드링크 플렉스',
+          productPrice: 179000,
+          productUrl: 'https://www.coupang.com/vp/products/speaker003',
+          isRocket: true, isFreeShipping: true, rating: 4.7, reviewCount: 8432,
+          pros: ['프리미엄 음질', '내구성'], cons: ['고가']
+        },
+        {
+          productId: 'SPEAKER004',
+          productName: '앤커 사운드코어 모션+',
+          productPrice: 89000,
+          productUrl: 'https://www.coupang.com/vp/products/speaker004',
+          isRocket: true, isFreeShipping: true, rating: 4.5, reviewCount: 23456,
+          pros: ['가성비 좋음', '30W 출력'], cons: ['디자인 평범']
+        }
+      ],
+      '충전케이블': [
+        {
+          productId: 'CABLE001',
+          productName: '앤커 나일론 C타입 고속충전 케이블 2M',
+          productPrice: 12900,
+          productUrl: 'https://www.coupang.com/vp/products/cable001',
+          isRocket: true, isFreeShipping: true, rating: 4.7, reviewCount: 67890,
+          pros: ['내구성 좋음', '고속충전'], cons: ['가격 있음']
+        },
+        {
+          productId: 'CABLE002',
+          productName: '삼성 정품 C타입 케이블 1.5M',
+          productPrice: 15900,
+          productUrl: 'https://www.coupang.com/vp/products/cable002',
+          isRocket: true, isFreeShipping: true, rating: 4.6, reviewCount: 34567,
+          pros: ['정품 안정성', '45W 지원'], cons: ['길이 선택 제한']
+        },
+        {
+          productId: 'CABLE003',
+          productName: '베이스어스 100W C타입 케이블',
+          productPrice: 9900,
+          productUrl: 'https://www.coupang.com/vp/products/cable003',
+          isRocket: true, isFreeShipping: true, rating: 4.4, reviewCount: 45678,
+          pros: ['100W 고속충전', '저렴함'], cons: ['내구성 보통']
+        },
+        {
+          productId: 'CABLE004',
+          productName: '맥세이프 충전 케이블 1M',
+          productPrice: 29900,
+          productUrl: 'https://www.coupang.com/vp/products/cable004',
+          isRocket: true, isFreeShipping: true, rating: 4.5, reviewCount: 12345,
+          pros: ['아이폰 최적화', '자석 부착'], cons: ['아이폰 전용']
+        }
+      ],
+      '스마트워치': [
+        {
+          productId: 'WATCH001',
+          productName: '애플 워치 시리즈 9 45mm GPS',
+          productPrice: 599000,
+          productUrl: 'https://www.coupang.com/vp/products/watch001',
+          isRocket: true, isFreeShipping: true, rating: 4.9, reviewCount: 8765,
+          pros: ['아이폰 연동 최고', '건강 기능'], cons: ['높은 가격']
+        },
+        {
+          productId: 'WATCH002',
+          productName: '삼성 갤럭시 워치6 44mm',
+          productPrice: 349000,
+          productUrl: 'https://www.coupang.com/vp/products/watch002',
+          isRocket: true, isFreeShipping: true, rating: 4.7, reviewCount: 12345,
+          pros: ['안드로이드 최적화', '세련된 디자인'], cons: ['배터리 아쉬움']
+        },
+        {
+          productId: 'WATCH003',
+          productName: '샤오미 미밴드 8',
+          productPrice: 39900,
+          productUrl: 'https://www.coupang.com/vp/products/watch003',
+          isRocket: true, isFreeShipping: true, rating: 4.5, reviewCount: 56789,
+          pros: ['가성비 최고', '긴 배터리'], cons: ['기능 제한적']
+        },
+        {
+          productId: 'WATCH004',
+          productName: '가민 비보액티브 5',
+          productPrice: 399000,
+          productUrl: 'https://www.coupang.com/vp/products/watch004',
+          isRocket: true, isFreeShipping: true, rating: 4.6, reviewCount: 4567,
+          pros: ['운동 기능 최고', 'GPS 정확'], cons: ['스마트 기능 부족']
+        }
+      ]
+    };
+  }
+
+  /**
+   * 오늘의 카테고리 선택 (요일별 로테이션)
+   */
+  getTodayCategory() {
+    const categories = Object.keys(this.getAllSampleProducts());
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    return categories[dayOfYear % categories.length];
+  }
+
+  /**
+   * 오늘의 상품 가져오기
+   */
+  async getTodayProducts() {
+    const allProducts = this.getAllSampleProducts();
+    const category = this.getTodayCategory();
+
+    console.log(`[수동] 오늘의 카테고리: ${category}`);
+
+    return {
+      category,
+      products: allProducts[category].map(p => ({
+        ...p,
+        productImage: '',
+        categoryName: category
+      }))
+    };
+  }
+
+  /**
    * 샘플 상품 생성
    */
   async createSampleProducts() {
