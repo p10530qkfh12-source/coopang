@@ -1,0 +1,42 @@
+{
+  "name": "coopang",
+  "version": "1.0.0",
+  "description": "쿠팡 파트너스 API 기반 개인용 상품 관리 도구",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "search": "node src/index.js search",
+    "draft": "node src/index.js draft",
+    "review": "node src/index.js review",
+    "images": "node src/index.js images",
+    "images:stats": "node src/index.js images:stats",
+    "hotdeal": "node src/index.js hotdeal",
+    "notify": "node src/index.js notify",
+    "notify:test": "node src/index.js notify:test",
+    "blog": "node src/index.js blog",
+    "publish": "node src/index.js publish",
+    "wp:test": "node src/index.js wp:test",
+    "wp:categories": "node src/index.js wp:categories",
+    "stats": "node src/index.js stats",
+    "demo": "node src/demo.js",
+    "demo:resilience": "node src/demo-resilience.js",
+    "demo:duplicate": "node src/demo-duplicate.js",
+    "demo:review": "node src/demo-personal-review.js",
+    "demo:images": "node src/demo-image-download.js",
+    "demo:filter": "node src/demo-filter.js",
+    "demo:telegram": "node src/demo-telegram.js",
+    "demo:blog": "node src/demo-blog.js",
+    "demo:wordpress": "node src/demo-wordpress.js",
+    "posted": "node src/index.js posted",
+    "report": "node src/index.js report",
+    "report:sample": "node src/index.js report:sample",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.4",
+    "dotenv": "^17.2.3"
+  }
+}

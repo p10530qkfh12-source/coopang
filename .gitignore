@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment variables (민감한 API 키 포함)
+.env
+.env.local
+.env.*.local
+
+# Data files (수집된 상품 데이터)
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
