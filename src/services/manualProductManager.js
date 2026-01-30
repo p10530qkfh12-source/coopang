@@ -1,0 +1,274 @@
+/**
+ * 수동 상품 관리 서비스
+ *
+ * 쿠팡 API 없이 수동으로 상품 정보를 입력하여 포스팅
+ */
+
+const fs = require('fs').promises;
+const path = require('path');
+
+class ManualProductManager {
+  constructor() {
+    this.dataDir = path.join(process.cwd(), 'data', 'manual');
+    this.productsFile = path.join(this.dataDir, 'products.json');
+  }
+
+  /**
+   * 데이터 디렉토리 초기화
+   */
+  async ensureDataDir() {
+    try {
+      await fs.mkdir(this.dataDir, { recursive: true });
+    } catch (error) {
+      // 이미 존재하면 무시
+    }
+  }
+
+  /**
+   * 저장된 상품 목록 로드
+   */
+  async loadProducts() {
+    try {
+      const content = await fs.readFile(this.productsFile, 'utf-8');
+      return JSON.parse(content);
+    } catch (error) {
+      return { products: [], categories: [] };
+    }
+  }
+
+  /**
+   * 상품 목록 저장
+   */
+  async saveProducts(data) {
+    await this.ensureDataDir();
+    await fs.writeFile(this.productsFile, JSON.stringify(data, null, 2), 'utf-8');
+  }
+
+  /**
+   * 상품 추가
+   */
+  async addProduct(product) {
+    const data = await this.loadProducts();
+
+    // 기본값 설정
+    const newProduct = {
+      productId: product.productId || `MANUAL_${Date.now()}`,
+      productName: product.productName || '상품명 없음',
+      productPrice: product.productPrice || 0,
+      productImage: product.productImage || '',
+      productUrl: product.productUrl || '',
+      categoryName: product.categoryName || '기타',
+      isRocket: product.isRocket || false,
+      isFreeShipping: product.isFreeShipping || false,
+      rating: product.rating || 0,
+      reviewCount: product.reviewCount || 0,
+      description: product.description || '',
+      pros: product.pros || [],
+      cons: product.cons || [],
+      addedAt: new Date().toISOString()
+    };
+
+    data.products.push(newProduct);
+    await this.saveProducts(data);
+
+    console.log(`[수동] 상품 추가됨: ${newProduct.productName}`);
+    return newProduct;
+  }
+
+  /**
+   * 카테고리별 상품 조회
+   */
+  async getProductsByCategory(category) {
+    const data = await this.loadProducts();
+    if (!category) return data.products;
+    return data.products.filter(p => p.categoryName === category);
+  }
+
+  /**
+   * 상품 목록 출력
+   */
+  async printProducts() {
+    const data = await this.loadProducts();
+
+    console.log('\n╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                    📦 수동 등록 상품 목록                      ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+    if (data.products.length === 0) {
+      console.log('  등록된 상품이 없습니다.\n');
+      console.log('  상품 추가: npm run manual:add');
+      console.log('  샘플 생성: npm run manual:sample\n');
+      return;
+    }
+
+    // 카테고리별 그룹화
+    const byCategory = {};
+    data.products.forEach(p => {
+      const cat = p.categoryName || '기타';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(p);
+    });
+
+    Object.entries(byCategory).forEach(([category, products]) => {
+      console.log(`━━━━━━━━━━ ${category} (${products.length}개) ━━━━━━━━━━`);
+      products.forEach((p, i) => {
+        console.log(`  ${i + 1}. ${p.productName.slice(0, 40)}`);
+        console.log(`     💰 ${p.productPrice.toLocaleString()}원 | ⭐ ${p.rating || '-'}`);
+      });
+      console.log('');
+    });
+
+    console.log(`총 ${data.products.length}개 상품\n`);
+  }
+
+  /**
+   * 샘플 상품 생성
+   */
+  async createSampleProducts() {
+    await this.ensureDataDir();
+
+    const sampleProducts = [
+      {
+        productId: 'SAMPLE001',
+        productName: '애플 에어팟 프로 2세대 USB-C',
+        productPrice: 299000,
+        productImage: '',
+        productUrl: 'https://www.coupang.com/vp/products/12345',
+        categoryName: '무선이어폰',
+        isRocket: true,
+        isFreeShipping: true,
+        rating: 4.8,
+        reviewCount: 15234,
+        description: '애플의 프리미엄 노이즈캔슬링 이어폰',
+        pros: ['노이즈캔슬링 우수', '애플 기기 연동', '컴팩트한 크기'],
+        cons: ['높은 가격', '안드로이드 기능 제한']
+      },
+      {
+        productId: 'SAMPLE002',
+        productName: '삼성 갤럭시 버즈3 프로',
+        productPrice: 259000,
+        productImage: '1428A0/ffffff?text=Galaxy+Buds3',
+        productUrl: 'https://www.coupang.com/vp/products/12346',
+        categoryName: '무선이어폰',
+        isRocket: true,
+        isFreeShipping: true,
+        rating: 4.7,
+        reviewCount: 8921,
+        description: '삼성의 프리미엄 무선 이어폰',
+        pros: ['갤럭시 기기 최적화', '편안한 착용감', '좋은 음질'],
+        cons: ['아이폰 사용시 기능 제한']
+      },
+      {
+        productId: 'SAMPLE003',
+        productName: 'QCY T13 ANC 무선 이어폰',
+        productPrice: 29900,
+        productImage: 'FF6B6B/ffffff?text=QCY+T13',
+        productUrl: 'https://www.coupang.com/vp/products/12347',
+        categoryName: '무선이어폰',
+        isRocket: true,
+        isFreeShipping: true,
+        rating: 4.3,
+        reviewCount: 32156,
+        description: '가성비 좋은 노이즈캔슬링 이어폰',
+        pros: ['저렴한 가격', '노이즈캔슬링 지원', '긴 배터리'],
+        cons: ['음질 평범', '통화품질 아쉬움']
+      },
+      {
+        productId: 'SAMPLE004',
+        productName: '앤커 사운드코어 스페이스 A40',
+        productPrice: 79000,
+        productImage: '4ECDC4/ffffff?text=Anker+A40',
+        productUrl: 'https://www.coupang.com/vp/products/12348',
+        categoryName: '무선이어폰',
+        isRocket: true,
+        isFreeShipping: true,
+        rating: 4.5,
+        reviewCount: 5678,
+        description: '중급 가격대 노이즈캔슬링 이어폰',
+        pros: ['가성비 우수', '앱 지원', '좋은 노캔 성능'],
+        cons: ['디자인 호불호']
+      },
+      {
+        productId: 'SAMPLE005',
+        productName: '소니 WF-1000XM5',
+        productPrice: 379000,
+        productImage: 'FFD93D/000000?text=Sony+XM5',
+        productUrl: 'https://www.coupang.com/vp/products/12349',
+        categoryName: '무선이어폰',
+        isRocket: true,
+        isFreeShipping: true,
+        rating: 4.9,
+        reviewCount: 3421,
+        description: '소니의 플래그십 무선 이어폰',
+        pros: ['최고 수준 음질', '뛰어난 노캔', 'LDAC 지원'],
+        cons: ['최고가', '크기가 다소 큼']
+      }
+    ];
+
+    const data = { products: sampleProducts, categories: ['무선이어폰'] };
+    await this.saveProducts(data);
+
+    console.log(`[수동] 샘플 상품 ${sampleProducts.length}개 생성 완료`);
+    console.log(`  파일 위치: ${this.productsFile}\n`);
+
+    return sampleProducts;
+  }
+
+  /**
+   * 인터랙티브 상품 추가 (CLI용 데이터)
+   */
+  getProductTemplate() {
+    return {
+      productName: '',
+      productPrice: 0,
+      productImage: '',
+      productUrl: '',
+      categoryName: '',
+      isRocket: false,
+      isFreeShipping: false,
+      rating: 0,
+      reviewCount: 0,
+      description: '',
+      pros: [],
+      cons: []
+    };
+  }
+
+  /**
+   * URL에서 상품 정보 파싱 (간단 버전)
+   */
+  parseProductUrl(url) {
+    // 쿠팡 URL에서 상품 ID 추출
+    const match = url.match(/products\/(\d+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * 상품 삭제
+   */
+  async deleteProduct(productId) {
+    const data = await this.loadProducts();
+    const index = data.products.findIndex(p => p.productId === productId);
+
+    if (index === -1) {
+      console.log(`[수동] 상품을 찾을 수 없음: ${productId}`);
+      return false;
+    }
+
+    const removed = data.products.splice(index, 1)[0];
+    await this.saveProducts(data);
+
+    console.log(`[수동] 상품 삭제됨: ${removed.productName}`);
+    return true;
+  }
+
+  /**
+   * 모든 상품 삭제
+   */
+  async clearAllProducts() {
+    await this.saveProducts({ products: [], categories: [] });
+    console.log('[수동] 모든 상품 삭제됨');
+  }
+}
+
+module.exports = ManualProductManager;

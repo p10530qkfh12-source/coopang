@@ -30,6 +30,10 @@
     "posted": "node src/index.js posted",
     "report": "node src/index.js report",
     "report:sample": "node src/index.js report:sample",
+    "manual:list": "node src/index.js manual:list",
+    "manual:sample": "node src/index.js manual:sample",
+    "manual:publish": "node src/index.js manual:publish",
+    "manual:notify": "node src/index.js manual:notify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

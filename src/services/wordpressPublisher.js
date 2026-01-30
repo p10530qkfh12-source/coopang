@@ -21,8 +21,9 @@ class WordPressPublisher {
     this.username = options.username || process.env.WP_USERNAME;
     this.appPassword = options.appPassword || process.env.WP_APP_PASSWORD;
 
-    // API 엔드포인트
-    this.apiBase = this.siteUrl ? `${this.siteUrl.replace(/\/$/, '')}/wp-json/wp/v2` : null;
+    // API 엔드포인트 (Plain 퍼머링크 지원)
+    this.usePlainPermalinks = options.usePlainPermalinks || false;
+    this.apiBase = this.siteUrl ? this.buildApiBase() : null;
 
     // 기본 설정
     this.defaultCategory = options.defaultCategory || null;
@@ -56,6 +57,28 @@ class WordPressPublisher {
       failed: 0,
       skipped: 0
     };
+  }
+
+  /**
+   * API Base URL 생성
+   */
+  buildApiBase() {
+    const baseUrl = this.siteUrl.replace(/\/$/, '');
+    if (this.usePlainPermalinks) {
+      return `${baseUrl}/?rest_route=/wp/v2`;
+    }
+    return `${baseUrl}/wp-json/wp/v2`;
+  }
+
+  /**
+   * API 엔드포인트 URL 생성
+   */
+  getEndpointUrl(endpoint) {
+    const baseUrl = this.siteUrl.replace(/\/$/, '');
+    if (this.usePlainPermalinks) {
+      return `${baseUrl}/?rest_route=/wp/v2/${endpoint}`;
+    }
+    return `${baseUrl}/wp-json/wp/v2/${endpoint}`;
   }
 
   /**
@@ -144,7 +167,7 @@ class WordPressPublisher {
       const credentials = Buffer.from(`${this.username}:${this.appPassword}`).toString('base64');
 
       const uploadResponse = await axios.post(
-        `${this.apiBase}/media`,
+        this.getEndpointUrl('media'),
         imageBuffer,
         {
           headers: {
@@ -161,7 +184,7 @@ class WordPressPublisher {
       // 3. 대체 텍스트 설정
       if (altText) {
         await axios.post(
-          `${this.apiBase}/media/${mediaId}`,
+          this.getEndpointUrl(`media/${mediaId}`),
           { alt_text: altText },
           { headers: this.getAuthHeader() }
         );
@@ -198,7 +221,7 @@ class WordPressPublisher {
   async setFeaturedImage(postId, mediaId) {
     try {
       await axios.post(
-        `${this.apiBase}/posts/${postId}`,
+        this.getEndpointUrl(`posts/${postId}`),
         { featured_media: mediaId },
         { headers: this.getAuthHeader() }
       );
@@ -445,6 +468,48 @@ class WordPressPublisher {
   // ============================================
 
   /**
+   * 퍼머링크 형식 자동 감지
+   */
+  async detectPermalinkFormat() {
+    const baseUrl = this.siteUrl.replace(/\/$/, '');
+
+    // 1. Plain Permalinks 먼저 시도 (더 안정적)
+    try {
+      const response = await axios.get(`${baseUrl}/?rest_route=/wp/v2/`, {
+        timeout: 5000,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (response.status === 200 && response.data && typeof response.data === 'object') {
+        this.usePlainPermalinks = true;
+        this.apiBase = this.buildApiBase();
+        return 'plain';
+      }
+    } catch (e) {
+      // Plain 실패, Pretty 시도
+    }
+
+    // 2. Pretty Permalinks 시도
+    try {
+      const response = await axios.get(`${baseUrl}/wp-json/wp/v2/`, {
+        timeout: 5000,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (response.status === 200 && response.data && typeof response.data === 'object') {
+        this.usePlainPermalinks = false;
+        this.apiBase = this.buildApiBase();
+        return 'pretty';
+      }
+    } catch (e) {
+      // 둘 다 실패
+    }
+
+    // 기본값: Plain
+    this.usePlainPermalinks = true;
+    this.apiBase = this.buildApiBase();
+    return 'plain';
+  }
+
+  /**
    * 연결 테스트
    */
   async testConnection() {
@@ -455,8 +520,16 @@ class WordPressPublisher {
 
     console.log('\n[워드프레스] 연결 테스트 중...');
 
+    // 퍼머링크 형식 자동 감지
+    const permalinkFormat = await this.detectPermalinkFormat();
+    if (!permalinkFormat) {
+      console.error('[워드프레스] REST API에 접근할 수 없습니다.');
+      return { success: false, error: 'REST API 접근 불가' };
+    }
+    console.log(`[워드프레스] 퍼머링크 형식: ${permalinkFormat}`);
+
     try {
-      const response = await axios.get(`${this.apiBase}/users/me`, {
+      const response = await axios.get(this.getEndpointUrl('users/me'), {
         headers: this.getAuthHeader()
       });
 
@@ -478,7 +551,7 @@ class WordPressPublisher {
    */
   async getCategories() {
     try {
-      const response = await axios.get(`${this.apiBase}/categories`, {
+      const response = await axios.get(this.getEndpointUrl('categories'), {
         headers: this.getAuthHeader(),
         params: { per_page: 100 }
       });
@@ -517,7 +590,7 @@ class WordPressPublisher {
    */
   async createCategory(name, slug = null) {
     try {
-      const response = await axios.post(`${this.apiBase}/categories`, {
+      const response = await axios.post(this.getEndpointUrl('categories'), {
         name: name,
         slug: slug || name.toLowerCase().replace(/\s+/g, '-')
       }, {
@@ -543,7 +616,7 @@ class WordPressPublisher {
     for (const tagName of tagNames) {
       try {
         // 먼저 검색
-        const searchResponse = await axios.get(`${this.apiBase}/tags`, {
+        const searchResponse = await axios.get(this.getEndpointUrl('tags'), {
           headers: this.getAuthHeader(),
           params: { search: tagName }
         });
@@ -552,7 +625,7 @@ class WordPressPublisher {
           tagIds.push(searchResponse.data[0].id);
         } else {
           // 없으면 생성
-          const createResponse = await axios.post(`${this.apiBase}/tags`, {
+          const createResponse = await axios.post(this.getEndpointUrl('tags'), {
             name: tagName
           }, {
             headers: this.getAuthHeader()
@@ -796,24 +869,28 @@ class WordPressPublisher {
       }
 
       // 2. API 호출 - 포스트 생성
-      const response = await axios.post(`${this.apiBase}/posts`, postData, {
+      const response = await axios.post(this.getEndpointUrl('posts'), postData, {
         headers: this.getAuthHeader()
       });
+      const data = response.data;
+      const postTitle = data.title?.rendered || data.title?.raw || title;
+      const postLink = typeof data.link === 'string' ? data.link : `${this.siteUrl}/?p=${data.id}`;
 
       return {
         success: true,
         post: {
-          id: response.data.id,
-          title: response.data.title.rendered,
-          link: response.data.link,
-          status: response.data.status,
-          slug: response.data.slug,
-          date: response.data.date,
+          id: data.id,
+          title: postTitle,
+          link: postLink,
+          status: data.status,
+          slug: data.slug || '',
+          date: data.date,
           featuredMediaId: featuredMediaId
         }
       };
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
+      console.error(`[워드프레스] API 오류: ${errorMsg}`);
       return { success: false, error: errorMsg };
     }
   }
@@ -830,6 +907,9 @@ class WordPressPublisher {
       this.printConfigError();
       return { success: false, error: '설정 필요' };
     }
+
+    // 퍼머링크 형식 자동 감지
+    await this.detectPermalinkFormat();
 
     const keyword = options.keyword || '추천 상품';
     const year = new Date().getFullYear();

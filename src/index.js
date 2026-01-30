@@ -17,6 +17,7 @@ const TelegramNotifier = require('./services/telegramNotifier');
 const BlogPostGenerator = require('./services/blogPostGenerator');
 const WordPressPublisher = require('./services/wordpressPublisher');
 const RevenueReporter = require('./services/revenueReporter');
+const ManualProductManager = require('./services/manualProductManager');
 
 function printUsage() {
   console.log(`
@@ -41,6 +42,12 @@ function printUsage() {
   npm run images:stats               다운로드된 이미지 통계
   npm run report                     수익 리포트 (어제 수익 + 베스트셀러)
   npm run report:sample              샘플 CSV 생성 (테스트용)
+
+수동 모드 (API 키 불필요):
+  npm run manual:list                수동 등록 상품 목록
+  npm run manual:sample              샘플 상품 생성
+  npm run manual:publish [카테고리]  수동 상품 워드프레스 포스팅
+  npm run manual:notify [카테고리]   수동 상품 텔레그램 알림
 
 예시:
   npm run search "무선 이어폰" 10
@@ -522,6 +529,100 @@ async function reportSampleCommand() {
   console.log('');
 }
 
+// ============================================
+// 수동 모드 (API 키 불필요)
+// ============================================
+
+/**
+ * 수동 등록 상품 목록
+ */
+async function manualListCommand() {
+  const manager = new ManualProductManager();
+  await manager.printProducts();
+}
+
+/**
+ * 샘플 상품 생성
+ */
+async function manualSampleCommand() {
+  const manager = new ManualProductManager();
+  await manager.createSampleProducts();
+  await manager.printProducts();
+}
+
+/**
+ * 수동 상품 워드프레스 포스팅
+ */
+async function manualPublishCommand(category) {
+  const manager = new ManualProductManager();
+  const wordpress = new WordPressPublisher();
+
+  // 워드프레스 설정 확인
+  if (!wordpress.isConfigured()) {
+    wordpress.printConfigError();
+    return;
+  }
+
+  // 상품 로드
+  const products = await manager.getProductsByCategory(category);
+
+  if (products.length === 0) {
+    console.log('\n등록된 상품이 없습니다.');
+    console.log('먼저 샘플을 생성하세요: npm run manual:sample\n');
+    return;
+  }
+
+  console.log(`\n[수동 포스팅] ${products.length}개 상품\n`);
+
+  // 키워드 설정
+  const keyword = category || '추천 상품';
+
+  // 워드프레스에 포스팅
+  const result = await wordpress.publishProducts(products, {
+    keyword: keyword,
+    status: 'draft',
+    tags: [keyword, '쿠팡', '추천']
+  });
+
+  if (result.success) {
+    console.log('========== 포스팅 완료 ==========');
+    console.log(`포스트 URL: ${result.post.link}`);
+    console.log('워드프레스 관리자에서 확인 후 발행하세요.');
+    console.log('=================================\n');
+  }
+}
+
+/**
+ * 수동 상품 텔레그램 알림
+ */
+async function manualNotifyCommand(category) {
+  const manager = new ManualProductManager();
+  const telegram = new TelegramNotifier();
+
+  // 텔레그램 설정 확인
+  if (!telegram.isConfigured()) {
+    telegram.printConfigError();
+    return;
+  }
+
+  // 상품 로드
+  const products = await manager.getProductsByCategory(category);
+
+  if (products.length === 0) {
+    console.log('\n등록된 상품이 없습니다.');
+    console.log('먼저 샘플을 생성하세요: npm run manual:sample\n');
+    return;
+  }
+
+  console.log(`\n[수동 알림] ${products.length}개 상품\n`);
+
+  // 텔레그램 전송
+  const keyword = category || '수동 등록 상품';
+  await telegram.notifyProducts(products.slice(0, 5), keyword);
+
+  console.log('텔레그램 알림 전송 완료!\n');
+}
+
 /**
  * 메인 함수
  */
@@ -602,6 +703,23 @@ async function main() {
 
       case 'report:sample':
         await reportSampleCommand();
+        break;
+
+      // 수동 모드
+      case 'manual:list':
+        await manualListCommand();
+        break;
+
+      case 'manual:sample':
+        await manualSampleCommand();
+        break;
+
+      case 'manual:publish':
+        await manualPublishCommand(process.argv[3] || null);
+        break;
+
+      case 'manual:notify':
+        await manualNotifyCommand(process.argv[3] || null);
         break;
 
       default:
