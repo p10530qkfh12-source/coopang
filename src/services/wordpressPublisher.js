@@ -13,6 +13,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const DuplicateChecker = require('./duplicateChecker');
 const ContentEnhancer = require('./contentEnhancer');
+const PremiumContentGenerator = require('./premiumContentGenerator');
 
 class WordPressPublisher {
   constructor(options = {}) {
@@ -46,6 +47,9 @@ class WordPressPublisher {
 
     // 컨텐츠 강화 서비스
     this.contentEnhancer = new ContentEnhancer();
+
+    // 프리미엄 컨텐츠 생성기
+    this.premiumGenerator = new PremiumContentGenerator();
 
     // 중복 체커
     this.duplicateChecker = new DuplicateChecker();
@@ -915,26 +919,35 @@ class WordPressPublisher {
     const year = new Date().getFullYear();
     const month = new Date().getMonth() + 1;
 
+    // 프리미엄 모드 기본 활성화
+    const usePremium = options.premium !== false;
+
     console.log(`\n========== 워드프레스 포스팅 시작 ==========`);
     console.log(`키워드: ${keyword}`);
     console.log(`상품 수: ${products.length}개`);
     console.log(`상태: ${options.schedule ? '예약 발행' : (options.status || this.defaultStatus)}`);
-    console.log(`수익 최적화: 리뷰요약=${options.includeReviews !== false ? 'ON' : 'OFF'}, Q&A=${options.includeQA !== false ? 'ON' : 'OFF'}`);
+    console.log(`컨텐츠 모드: ${usePremium ? '✨ 프리미엄 (블로거 스타일)' : '기본'}`);
     console.log(`==========================================\n`);
 
-    // 제목 생성
-    const title = options.title || `${keyword} 추천 TOP ${products.length} (${year}년 ${month}월)`;
+    let title, content, excerpt;
 
-    // HTML 컨텐츠 생성 (수익 최적화 모드)
-    const content = this.generatePostHtml(products, {
-      keyword,
-      includeReviews: options.includeReviews !== false,
-      includeQA: options.includeQA !== false,
-      includeFtcDisclaimer: options.includeFtcDisclaimer !== false
-    });
-
-    // 요약 생성
-    const excerpt = `${keyword} 관련 인기 상품 ${products.length}개를 엄선하여 소개합니다. 가격, 평점, 배송 정보를 한눈에 비교해보세요.`;
+    if (usePremium) {
+      // 프리미엄 컨텐츠 생성 (블로거 스타일)
+      const premiumPost = this.premiumGenerator.generateFullPost(products, keyword);
+      title = options.title || premiumPost.title;
+      content = premiumPost.content;
+      excerpt = premiumPost.excerpt;
+    } else {
+      // 기존 기본 컨텐츠 생성
+      title = options.title || `${keyword} 추천 TOP ${products.length} (${year}년 ${month}월)`;
+      content = this.generatePostHtml(products, {
+        keyword,
+        includeReviews: options.includeReviews !== false,
+        includeQA: options.includeQA !== false,
+        includeFtcDisclaimer: options.includeFtcDisclaimer !== false
+      });
+      excerpt = `${keyword} 관련 인기 상품 ${products.length}개를 엄선하여 소개합니다. 가격, 평점, 배송 정보를 한눈에 비교해보세요.`;
+    }
 
     // SEO 키워드 자동 추출
     const seoKeywords = options.tags || this.extractKeywordsFromProducts(products, keyword);
