@@ -1,0 +1,117 @@
+name: 쿠팡 자동 포스팅
+
+on:
+  # 매일 오전 9시 (KST) 실행 = UTC 0시
+  schedule:
+    - cron: '0 0 * * *'
+
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: '검색 키워드'
+        required: true
+        default: '무선 이어폰'
+      count:
+        description: '상품 개수'
+        required: true
+        default: '5'
+      action:
+        description: '실행할 작업'
+        required: true
+        default: 'publish'
+        type: choice
+        options:
+          - publish
+          - draft
+          - blog
+          - notify
+          - report
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  auto-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 의존성 설치
+        run: npm ci
+
+      - name: 🔐 환경변수 설정
+        run: |
+          cat > .env << EOF
+          # 쿠팡 파트너스 API
+          COUPANG_ACCESS_KEY=${{ secrets.COUPANG_ACCESS_KEY }}
+          COUPANG_SECRET_KEY=${{ secrets.COUPANG_SECRET_KEY }}
+
+          # Rate Limiting
+          REQUEST_DELAY_MS=1000
+          MAX_RETRIES=3
+          TIMEOUT_MS=10000
+
+          # 워드프레스
+          WP_SITE_URL=${{ secrets.WP_SITE_URL }}
+          WP_USERNAME=${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD=${{ secrets.WP_APP_PASSWORD }}
+
+          # 텔레그램 (선택)
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          EOF
+
+      - name: 🚀 자동 포스팅 실행 (스케줄)
+        if: github.event_name == 'schedule'
+        run: |
+          echo "📝 일일 자동 포스팅 시작..."
+          npm run publish "오늘의 추천" 5
+        continue-on-error: true
+
+      - name: 🎯 수동 실행
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "🎯 수동 실행: ${{ github.event.inputs.action }}"
+          npm run ${{ github.event.inputs.action }} "${{ github.event.inputs.keyword }}" ${{ github.event.inputs.count }}
+
+      - name: 📊 실행 결과 요약
+        if: always()
+        run: |
+          echo "## 실행 결과" >> $GITHUB_STEP_SUMMARY
+          echo "- 시간: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S KST')" >> $GITHUB_STEP_SUMMARY
+          echo "- 트리거: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          if [ -d "data/posted_products.json" ]; then
+            echo "- 포스팅 기록: 존재" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # 수익 리포트 (매주 월요일)
+  weekly-report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 의존성 설치
+        run: npm ci
+
+      - name: 📊 주간 리포트 생성
+        run: |
+          echo "📊 주간 리포트는 CSV 파일이 필요합니다."
+          echo "쿠팡 파트너스 대시보드에서 CSV를 다운로드하세요."

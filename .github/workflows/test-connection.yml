@@ -1,0 +1,45 @@
+name: 연결 테스트
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: 환경변수 설정
+        run: |
+          cat > .env << EOF
+          COUPANG_ACCESS_KEY=${{ secrets.COUPANG_ACCESS_KEY }}
+          COUPANG_SECRET_KEY=${{ secrets.COUPANG_SECRET_KEY }}
+          WP_SITE_URL=${{ secrets.WP_SITE_URL }}
+          WP_USERNAME=${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD=${{ secrets.WP_APP_PASSWORD }}
+          REQUEST_DELAY_MS=1000
+          EOF
+
+      - name: 🔌 워드프레스 연결 테스트
+        run: npm run wp:test
+
+      - name: 📋 테스트 결과
+        if: always()
+        run: |
+          echo "## 연결 테스트 결과" >> $GITHUB_STEP_SUMMARY
+          echo "| 서비스 | 상태 |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 워드프레스 | ${{ job.status == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
