@@ -241,7 +241,7 @@ class PremiumContentGenerator {
   }
 
   /**
-   * 개별 상품 카드 HTML 생성
+   * 개별 상품 카드 HTML 생성 (반응형)
    */
   generateProductCard(product, index, keyword) {
     const benefits = this.generateBenefits(product);
@@ -249,46 +249,122 @@ class PremiumContentGenerator {
 
     const priceText = product.productPrice.toLocaleString();
 
-    return `
-<div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    // 할인율 표시
+    const discountBadge = product.discountRate ? `
+      <span style="background: #e74c3c; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; margin-left: 10px;">
+        ${product.discountRate}% OFF
+      </span>
+    ` : '';
 
-  <h3 style="margin-top: 0; font-size: 1.4em; color: #2c3e50;">
-    ${index}위. ${product.productName}
+    // 배지 (로켓배송 등)
+    const badges = [];
+    if (product.isRocket) badges.push('<span style="background: #3498db; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; margin-right: 6px;">🚀 로켓배송</span>');
+    if (product.isFreeShipping) badges.push('<span style="background: #27ae60; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.75em;">📦 무료배송</span>');
+
+    return `
+<div class="product-card" style="
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 24px;
+  margin: 28px 0;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  border: 1px solid #eee;
+">
+
+  <!-- 순위 배지 -->
+  <div style="display: flex; align-items: center; margin-bottom: 16px;">
+    <span style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-right: 12px;
+    ">${index}</span>
+    <div style="flex: 1;">${badges.join('')}</div>
+  </div>
+
+  <!-- 상품명 -->
+  <h3 style="margin: 0 0 16px 0; font-size: 1.3em; color: #2c3e50; line-height: 1.4;">
+    ${product.productName}
   </h3>
 
+  <!-- 상품 이미지 -->
   ${product.productImage ? `
-  <div style="text-align: center; margin: 16px 0;">
-    <img src="${product.productImage}" alt="${product.productName}" style="max-width: 100%; max-height: 300px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" />
+  <div style="text-align: center; margin: 20px 0; background: #fff; border-radius: 16px; padding: 20px;">
+    <img src="${product.productImage}" alt="${product.productName}"
+      style="max-width: 100%; max-height: 280px; border-radius: 12px; object-fit: contain;"
+      loading="lazy" />
   </div>
   ` : ''}
 
-  <div style="background: #fff; border-radius: 12px; padding: 16px; margin: 16px 0;">
-    <p style="font-size: 1.5em; color: #e74c3c; font-weight: bold; margin: 0;">
-      💵 ${priceText}원
+  <!-- 가격 정보 -->
+  <div class="info-box" style="background: #fff; border-radius: 16px; padding: 20px; margin: 20px 0; border: 2px solid #f0f0f0;">
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <p class="price-tag" style="font-size: 1.6em; color: #e74c3c; font-weight: bold; margin: 0;">
+        ${priceText}원
+      </p>
+      ${discountBadge}
+    </div>
+    ${product.basePrice && product.basePrice > product.productPrice ? `
+    <p style="color: #999; margin: 8px 0 0 0; font-size: 0.9em; text-decoration: line-through;">
+      정가 ${product.basePrice.toLocaleString()}원
     </p>
+    ` : ''}
     ${product.rating ? `
-    <p style="color: #666; margin: 8px 0 0 0;">
-      ⭐ ${product.rating}점 (리뷰 ${product.reviewCount?.toLocaleString() || 0}개)
-    </p>
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
+      <span style="color: #f39c12; font-size: 1.1em;">★</span>
+      <strong style="color: #333;">${product.rating}</strong>
+      <span style="color: #888; font-size: 0.9em;">(리뷰 ${product.reviewCount?.toLocaleString() || 0}개)</span>
+    </div>
     ` : ''}
   </div>
 
-  <h4 style="color: #34495e; margin-top: 20px;">${this.subheadings.features}</h4>
-  <ul style="line-height: 1.8; color: #555;">
-    ${benefits.map(b => `<li>${b}</li>`).join('\n    ')}
+  <!-- 장점 리스트 -->
+  <h4 style="color: #34495e; margin: 24px 0 12px 0; font-size: 1.1em;">${this.subheadings.features}</h4>
+  <ul style="line-height: 2; color: #555; padding-left: 20px; margin: 0;">
+    ${benefits.map(b => `<li style="margin: 6px 0;">${b}</li>`).join('\n    ')}
   </ul>
 
-  <div style="background: #e8f4fd; border-left: 4px solid #3498db; padding: 16px; border-radius: 0 8px 8px 0; margin: 16px 0;">
-    <h4 style="margin-top: 0; color: #2980b9;">${this.subheadings.analysis}</h4>
-    <p style="margin: 8px 0;"><strong>📊 한 줄 평가:</strong> ${analysis.summary}</p>
-    <p style="margin: 8px 0;">${analysis.priceAnalysis}</p>
+  <!-- AI 분석 박스 -->
+  <div class="info-box" style="
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 5px solid #9c27b0;
+    padding: 20px;
+    border-radius: 0 16px 16px 0;
+    margin: 24px 0;
+  ">
+    <h4 style="margin: 0 0 12px 0; color: #7b1fa2; font-size: 1em;">${this.subheadings.analysis}</h4>
+    <p style="margin: 10px 0; color: #444; line-height: 1.7;">
+      <strong>📊 한 줄 평가:</strong> ${analysis.summary}
+    </p>
+    <p style="margin: 10px 0; color: #444; line-height: 1.7;">${analysis.priceAnalysis}</p>
     ${analysis.warnings.length > 0 ? `
-    <p style="margin: 8px 0; color: #e67e22;"><strong>⚠️ 구매 전 체크:</strong> ${analysis.warnings.join(', ')}</p>
+    <p style="margin: 10px 0 0 0; color: #e65100; line-height: 1.7;">
+      <strong>⚠️ 구매 전 체크:</strong> ${analysis.warnings.join(', ')}
+    </p>
     ` : ''}
   </div>
 
-  <div style="text-align: center; margin-top: 20px;">
-    ${linkGenerator.generateProductButton(product, '✨ 최저가 보러가기')}
+  <!-- CTA 버튼 -->
+  <div style="text-align: center; margin-top: 24px;">
+    ${linkGenerator.generateProductButton(product, '최저가 확인하기', `
+      display: inline-block;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: #fff;
+      padding: 18px 40px;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 1.1em;
+      box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    `.replace(/\s+/g, ' ').trim())}
   </div>
 
 </div>
@@ -345,38 +421,124 @@ class PremiumContentGenerator {
   }
 
   /**
-   * 공정위 광고 표시
+   * 반응형 스타일 (모바일 최적화)
+   */
+  getResponsiveStyles() {
+    return `
+<style>
+  .coupang-post { max-width: 100%; padding: 0 16px; box-sizing: border-box; }
+  .coupang-post * { box-sizing: border-box; }
+  .product-card { margin: 20px 0; }
+  .product-card img { max-width: 100%; height: auto; }
+  .cta-button { display: inline-block; width: auto; max-width: 100%; text-align: center; }
+
+  @media (max-width: 768px) {
+    .coupang-post { padding: 0 12px; }
+    .product-card { padding: 16px !important; margin: 16px 0 !important; }
+    .product-card h3 { font-size: 1.2em !important; }
+    .product-card img { border-radius: 8px !important; }
+    .price-tag { font-size: 1.3em !important; }
+    .cta-button { display: block !important; width: 100% !important; padding: 16px 20px !important; font-size: 1em !important; }
+    .ftc-box { padding: 16px !important; }
+    .ftc-box p { font-size: 0.85em !important; line-height: 1.6 !important; }
+  }
+
+  @media (max-width: 480px) {
+    .product-card { padding: 12px !important; }
+    .product-card h3 { font-size: 1.1em !important; line-height: 1.4 !important; }
+    .info-box { padding: 12px !important; }
+    .summary-box ul { padding-left: 20px !important; }
+  }
+</style>
+`;
+  }
+
+  /**
+   * 공정위 광고 표시 (세련된 디자인)
    */
   getFtcDisclaimer() {
     return `
-<div style="background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 0.9em; color: #856404;">
-  📢 <strong>광고 표시</strong> | 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+<div class="ftc-box" style="
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 30px;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+">
+  <p style="margin: 0; font-size: 0.95em; line-height: 1.7;">
+    <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-weight: bold; margin-right: 8px;">AD</span>
+    이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+  </p>
 </div>
 `;
   }
 
   /**
-   * 파트너스 고지
+   * 파트너스 고지 (하단 박스)
    */
   getPartnerDisclaimer() {
     return `
-<div style="margin-top: 40px; padding: 20px; background: #f1f3f5; border-radius: 12px; font-size: 0.85em; color: #666;">
-  <p><strong>🤝 쿠팡 파트너스 안내</strong></p>
-  <p>위 링크를 통해 구매하시면 소정의 수수료를 받을 수 있어요.
-  하지만 구매자분께 추가 비용이 발생하지 않으니 안심하세요!
-  더 좋은 콘텐츠로 보답하겠습니다 😊</p>
-  <p style="margin-bottom: 0;">※ 상품 정보와 가격은 작성 시점 기준이며 변동될 수 있어요.</p>
+<div class="ftc-box" style="
+  margin-top: 50px;
+  padding: 28px;
+  background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  border: 2px solid #dee2e6;
+  position: relative;
+  overflow: hidden;
+">
+  <div style="
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    opacity: 0.1;
+    border-radius: 50%;
+  "></div>
+
+  <h4 style="margin: 0 0 16px 0; color: #495057; font-size: 1.1em;">
+    <span style="margin-right: 8px;">🤝</span>쿠팡 파트너스 안내
+  </h4>
+
+  <p style="margin: 0 0 12px 0; color: #666; font-size: 0.9em; line-height: 1.8;">
+    본 포스팅에 포함된 링크를 통해 구매하시면 소정의 수수료를 제공받을 수 있습니다.
+    <strong>구매자에게 추가 비용은 발생하지 않습니다.</strong>
+  </p>
+
+  <p style="margin: 0 0 12px 0; color: #666; font-size: 0.9em; line-height: 1.8;">
+    수수료는 더 좋은 콘텐츠를 만드는 데 사용됩니다. 감사합니다!
+  </p>
+
+  <div style="
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed #ced4da;
+  ">
+    <p style="margin: 0; color: #888; font-size: 0.8em; line-height: 1.6;">
+      ※ 상품 정보 및 가격은 작성 시점 기준이며, 변동될 수 있습니다.<br>
+      ※ 구매 전 상품 상세 페이지에서 최신 정보를 확인해주세요.
+    </p>
+  </div>
 </div>
 `;
   }
 
   /**
-   * 전체 포스트 HTML 생성
+   * 전체 포스트 HTML 생성 (반응형)
    */
   generateFullPost(products, keyword) {
     const title = this.generateTitle(keyword, products.length);
 
     let html = '';
+
+    // 반응형 스타일
+    html += this.getResponsiveStyles();
+
+    // 메인 컨테이너 시작
+    html += '<div class="coupang-post">';
 
     // 공정위 광고 표시 (최상단)
     html += this.getFtcDisclaimer();
@@ -384,18 +546,35 @@ class PremiumContentGenerator {
     // 공감형 도입부
     html += this.generateIntro(keyword, products);
 
-    // 목차
+    // 목차 (반응형)
     html += `
-<div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 24px 0;">
-  <h4 style="margin-top: 0;">📑 목차</h4>
-  <ol style="margin-bottom: 0; line-height: 1.8;">
-    ${products.map((p, i) => `<li>${p.productName.slice(0, 30)}${p.productName.length > 30 ? '...' : ''}</li>`).join('\n    ')}
+<div class="info-box" style="
+  background: linear-gradient(145deg, #f8f9fa 0%, #fff 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 28px 0;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+">
+  <h4 style="margin: 0 0 16px 0; color: #333; font-size: 1.1em;">
+    <span style="margin-right: 8px;">📑</span>오늘 소개할 제품들
+  </h4>
+  <ol style="margin: 0; padding-left: 24px; line-height: 2; color: #555;">
+    ${products.map((p, i) => `
+    <li style="margin: 4px 0;">
+      <span style="color: #888;">${p.productName.slice(0, 35)}${p.productName.length > 35 ? '...' : ''}</span>
+    </li>
+    `).join('')}
   </ol>
 </div>
 `;
 
     // 상품 카드들
-    html += `<h2 style="margin-top: 40px;">🛒 ${keyword} 추천 BEST ${products.length}</h2>`;
+    html += `
+<h2 style="margin: 40px 0 20px 0; color: #2c3e50; font-size: 1.5em;">
+  <span style="margin-right: 10px;">🛒</span>${keyword} 추천 BEST ${products.length}
+</h2>
+`;
 
     products.forEach((product, index) => {
       html += this.generateProductCard(product, index + 1, keyword);
@@ -409,6 +588,9 @@ class PremiumContentGenerator {
 
     // 파트너스 고지
     html += this.getPartnerDisclaimer();
+
+    // 메인 컨테이너 종료
+    html += '</div>';
 
     return {
       title,

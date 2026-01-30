@@ -35,6 +35,7 @@
     "manual:publish": "node src/index.js manual:publish",
     "manual:notify": "node src/index.js manual:notify",
     "auto": "node src/index.js auto",
+    "test:dummy": "node src/test-dummy.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
